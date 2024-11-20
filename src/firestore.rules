@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isClub() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/clubs/$(request.auth.uid));
+    }
+    
+    function isFan() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/fans/$(request.auth.uid));
+    }
+    
+    match /clubs/{clubId} {
+      allow read: if true;
+      allow update: if isAuthenticated() && request.auth.uid == clubId;
+      allow create: if isAuthenticated() && 
+        request.auth.uid == clubId &&
+        !exists(/databases/$(database)/documents/fans/$(request.auth.uid));
+    }
+
+    match /players/{playerId} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+        exists(/databases/$(database)/documents/clubs/$(request.auth.uid)) &&
+        request.resource.data.clubId == request.auth.uid;
+    }
+    
+    match /fans/{fanId} {
+      allow read: if isAuthenticated();
+      allow update: if isAuthenticated() && request.auth.uid == fanId;
+      allow create: if isAuthenticated() && 
+        request.auth.uid == fanId &&
+        !exists(/databases/$(database)/documents/clubs/$(request.auth.uid));
+    }
+    
+    match /matches/{matchId} {
+      allow read: if true;
+      allow update, delete: if isClub() && resource.data.clubId == request.auth.uid;
+      allow create: if isClub() && request.resource.data.clubId == request.auth.uid;
+      allow update: if isFan() && 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalGrant', 'grants']) &&
+        request.resource.data.grants[request.auth.uid] > (resource.data.grants[request.auth.uid] || 0);
+    }
+  }
+}
