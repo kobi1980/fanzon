@@ -181,6 +181,7 @@ const ClubConfig = () => {
                   onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   placeholder="Leave blank to keep current password"
+                  autoComplete="new-password"
                 />
               </div>
 
@@ -193,6 +194,7 @@ const ClubConfig = () => {
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  autoComplete="new-password"
                 />
               </div>
             </div>

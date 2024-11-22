@@ -5,6 +5,7 @@ import { updatePassword, updateEmail } from 'firebase/auth';
 import { useAuth } from '../contexts/AuthContext';
 
 const UserProfile = () => {
+  console.log('Component mounting');
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
@@ -21,30 +22,32 @@ const UserProfile = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log('Initial formData:', formData);
         const userDoc = await getDoc(doc(db, 'fans', user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          setFormData(prev => ({
-            ...prev,
+          setFormData({           // Changed from setFormData(prev => ({
             name: userData.name || '',
-            email: user.email
-          }));
+            email: user.email,
+            newPassword: '',      // Explicitly empty
+            confirmPassword: ''   // Explicitly empty
+          });
           setSelectedClubs(userData.followedClubs || []);
         }
-
+  
         const clubsSnapshot = await getDocs(collection(db, 'clubs'));
         const clubsData = clubsSnapshot.docs.map(doc => ({
           id: doc.id,
           clubName: doc.data().clubName
         }));
         setAvailableClubs(clubsData);
-        setLoading(false);
       } catch (error) {
         setError('Failed to load profile data');
+      } finally {
         setLoading(false);
       }
     };
-
+  
     fetchData();
   }, [user]);
 
@@ -61,33 +64,46 @@ const UserProfile = () => {
     setError('');
     setSuccess('');
     setLoading(true);
-
+  
     try {
       const updates = {
         name: formData.name,
         followedClubs: selectedClubs
       };
-      
-      await updateDoc(doc(db, 'fans', user.uid), updates);
-
+  
+      // Only handle password update if both fields have values
+      if (formData.newPassword.trim() !== '' || formData.confirmPassword.trim() !== '') {
+        if (formData.newPassword !== formData.confirmPassword) {
+          setError('Passwords do not match');
+          setLoading(false);
+          return;
+        }
+        if (formData.newPassword.trim().length > 0) {
+          await updatePassword(auth.currentUser, formData.newPassword);
+        }
+      }
+  
+      // Update email if changed
       if (formData.email !== user.email) {
         await updateEmail(auth.currentUser, formData.email);
       }
-
-      if (formData.newPassword) {
-        if (formData.newPassword !== formData.confirmPassword) {
-          throw new Error('Passwords do not match');
-        }
-        await updatePassword(auth.currentUser, formData.newPassword);
-      }
-
+  
+      // Update user document in Firestore
+      await updateDoc(doc(db, 'fans', user.uid), updates);
+  
       setSuccess('Profile updated successfully');
-      setFormData(prev => ({ ...prev, newPassword: '', confirmPassword: '' }));
+      // Reset password fields after successful update
+      setFormData(prev => ({
+        ...prev,
+        newPassword: '',
+        confirmPassword: ''
+      }));
     } catch (error) {
+      console.error('Error updating profile:', error);
       setError(error.message || 'Failed to update profile');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   if (loading) return <div className="text-center">Loading profile...</div>;
@@ -139,6 +155,7 @@ const UserProfile = () => {
               value={formData.newPassword}
               onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              autoComplete="new-password"  // Add this line
             />
           </div>
 
@@ -151,9 +168,9 @@ const UserProfile = () => {
               value={formData.confirmPassword}
               onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              autoComplete="new-password"  // Add this line
             />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Following Clubs
@@ -162,8 +179,13 @@ const UserProfile = () => {
               {availableClubs.map(club => (
                 <div
                   key={club.id}
-                  onClick={() => handleClubToggle(club.id)}
-                  className={`p-4 border rounded-lg cursor-pointer ${
+                  onClick={() => {
+                    const newSelectedClubs = selectedClubs.includes(club.id)
+                      ? selectedClubs.filter(id => id !== club.id)
+                      : [...selectedClubs, club.id];
+                    setSelectedClubs(newSelectedClubs);
+                  }}
+                  className={`p-4 border rounded-lg cursor-pointer flex items-center space-x-3 ${
                     selectedClubs.includes(club.id)
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-blue-300'
