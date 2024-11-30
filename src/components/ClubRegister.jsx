@@ -1,21 +1,22 @@
-import React, { useState } from 'react';
-import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+
+import { auth, db } from '../firebase';
 
 const ClubRegister = () => {
   const [formData, setFormData] = useState({
     clubName: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -39,16 +40,16 @@ const ClubRegister = () => {
     try {
       console.log('Creating user account...');
       const userCredential = await createUserWithEmailAndPassword(
-        auth, 
-        formData.email, 
-        formData.password
+        auth,
+        formData.email,
+        formData.password,
       );
 
       console.log('User created, saving club data...');
       await setDoc(doc(db, 'clubs', userCredential.user.uid), {
         clubName: formData.clubName,
         email: formData.email,
-        createdAt: new Date()
+        createdAt: new Date(),
       });
 
       console.log('Registration complete, navigating...');
@@ -77,7 +78,7 @@ const ClubRegister = () => {
             Register Your Club
           </h2>
         </div>
-        
+
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
             {error}
@@ -95,7 +96,7 @@ const ClubRegister = () => {
                 type="text"
                 required
                 value={formData.clubName}
-                onChange={(e) => setFormData({ ...formData, clubName: e.target.value })}
+                onChange={e => setFormData({ ...formData, clubName: e.target.value })}
                 className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="Enter club name"
               />
@@ -110,7 +111,7 @@ const ClubRegister = () => {
                 type="email"
                 required
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={e => setFormData({ ...formData, email: e.target.value })}
                 className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="Enter email address"
               />
@@ -125,7 +126,7 @@ const ClubRegister = () => {
                 type="password"
                 required
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={e => setFormData({ ...formData, password: e.target.value })}
                 className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="Enter password"
               />
@@ -140,7 +141,7 @@ const ClubRegister = () => {
                 type="password"
                 required
                 value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
                 className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="Confirm password"
               />
@@ -160,10 +161,7 @@ const ClubRegister = () => {
           </div>
 
           <div className="text-center">
-            <Link 
-              to="/club/login"
-              className="text-sm text-blue-600 hover:text-blue-500"
-            >
+            <Link to="/club/login" className="text-sm text-blue-600 hover:text-blue-500">
               Already have a club account? Sign in
             </Link>
           </div>

@@ -1,13 +1,14 @@
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-import { useAuth } from '../contexts/AuthContext';
 
-const isRTL = (text) => {
-    const rtlRegex = /[\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC]/;
-    return rtlRegex.test(text);
-  };
+import { useAuth } from '../contexts/AuthContext';
+import { db } from '../firebase';
+
+const isRTL = text => {
+  const rtlRegex = /[\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC]/;
+  return rtlRegex.test(text);
+};
 
 const MatchDetail = () => {
   const { id } = useParams();
@@ -48,13 +49,13 @@ const MatchDetail = () => {
     try {
       await updateDoc(doc(db, 'matches', id), {
         article: articleContent,
-        lastUpdated: new Date()
+        lastUpdated: new Date(),
       });
       setIsEditing(false);
       setMatch(prev => ({
         ...prev,
         article: articleContent,
-        lastUpdated: new Date()
+        lastUpdated: new Date(),
       }));
     } catch (error) {
       setError('Failed to save article');
@@ -90,18 +91,18 @@ const MatchDetail = () => {
       }
 
       const currentMatch = matchDoc.data();
-      
+
       // Initialize grants if it doesn't exist
       const currentGrants = currentMatch.grants || {};
       const currentUserGrant = currentGrants[user.uid] || 0;
-      
+
       // Create the update object with proper initialization
       const updates = {
         totalGrant: (currentMatch.totalGrant || 0) + amount,
         grants: {
           ...currentGrants,
-          [user.uid]: currentUserGrant + amount
-        }
+          [user.uid]: currentUserGrant + amount,
+        },
       };
 
       console.log('Updates to be applied:', updates);
@@ -109,13 +110,13 @@ const MatchDetail = () => {
       // Update the document
       await updateDoc(matchRef, updates);
       console.log('Update completed successfully');
-      
+
       // Update local state
       setMatch(prev => ({
         ...prev,
-        ...updates
+        ...updates,
       }));
-      
+
       setGrantAmount('');
       setError('');
     } catch (error) {
@@ -142,15 +143,13 @@ const MatchDetail = () => {
             {userGrant > 0 ? (
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-blue-800">
-                  You have already committed ${userGrant.toLocaleString()}.
-                  Any additional amount will be added to your current commitment.
+                  You have already committed ${userGrant.toLocaleString()}. Any additional amount
+                  will be added to your current commitment.
                 </p>
               </div>
             ) : (
               <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-gray-600">
-                  Commit funds to support your team in this match!
-                </p>
+                <p className="text-gray-600">Commit funds to support your team in this match!</p>
               </div>
             )}
           </div>
@@ -158,7 +157,7 @@ const MatchDetail = () => {
             <input
               type="number"
               value={grantAmount}
-              onChange={(e) => setGrantAmount(e.target.value)}
+              onChange={e => setGrantAmount(e.target.value)}
               placeholder="Enter grant amount"
               className="p-2 border rounded focus:ring-2 focus:ring-blue-500"
               min="0"
@@ -202,86 +201,91 @@ const MatchDetail = () => {
         {/* Main Content */}
         <div className="flex-grow">
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h1 className="text-3xl font-bold mb-4">
-            {isRTL(match.opponent) && isRTL(match.clubName) ? (
+            <h1 className="text-3xl font-bold mb-4">
+              {isRTL(match.opponent) && isRTL(match.clubName) ? (
                 // Both teams are RTL
                 <div className="text-right">
-                {match.isHome ? (
+                  {match.isHome ? (
                     <>
-                    <span>{match.opponent}</span>
-                    <span className="text-gray-500"> נגד </span>
-                    <span>{match.clubName}</span>
+                      <span>{match.opponent}</span>
+                      <span className="text-gray-500"> נגד </span>
+                      <span>{match.clubName}</span>
                     </>
-                ) : (
+                  ) : (
                     <>
-                    <span>{match.clubName}</span>
-                    <span className="text-gray-500"> נגד </span>
-                    <span>{match.opponent}</span>
+                      <span>{match.clubName}</span>
+                      <span className="text-gray-500"> נגד </span>
+                      <span>{match.opponent}</span>
                     </>
-                )}
+                  )}
                 </div>
-            ) : (
+              ) : (
                 // At least one team is LTR
                 <div className="text-left">
-                {match.isHome ? (
+                  {match.isHome ? (
                     <>
-                    <span>{match.clubName}</span>
-                    <span className="text-gray-500"> vs </span>
-                    <span>{match.opponent}</span>
+                      <span>{match.clubName}</span>
+                      <span className="text-gray-500"> vs </span>
+                      <span>{match.opponent}</span>
                     </>
-                ) : (
+                  ) : (
                     <>
-                    <span>{match.opponent}</span>
-                    <span className="text-gray-500"> vs </span>
-                    <span>{match.clubName}</span>
+                      <span>{match.opponent}</span>
+                      <span className="text-gray-500"> vs </span>
+                      <span>{match.clubName}</span>
                     </>
-                )}
+                  )}
                 </div>
-            )}
+              )}
             </h1>
             <div className="text-xl mb-6">
               Match Time: {new Date(match.datetime.seconds * 1000).toLocaleString()}
             </div>
             {/* Article Section */}
             <div className="prose max-w-none">
-            {match.articleUrl ? (
+              {match.articleUrl ? (
                 <div>
-                {/* Main article embed */}
-                <div className="relative overflow-hidden pb-[56.25%] h-0 mb-4">
+                  {/* Main article embed */}
+                  <div className="relative overflow-hidden pb-[56.25%] h-0 mb-4">
                     <iframe
-                    src={match.articleUrl}
-                    className="absolute top-0 left-0 w-full h-full border rounded"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
+                      src={match.articleUrl}
+                      className="absolute top-0 left-0 w-full h-full border rounded"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
                     />
-                </div>
-                
-                {/* Backup link in case iframe doesn't work */}
-                <div className="text-sm text-gray-600 mb-4">
-                    Can't see the article? <a href={match.articleUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600">Click here to open it in a new tab</a>
-                </div>
-                </div>
-            ) : (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-gray-500 italic">No article available yet.</p>
-                </div>
-            )}
+                  </div>
 
-            {/* Show edit button for club owners */}
-            {isClub && match.clubId === user?.uid && (
+                  {/* Backup link in case iframe doesn't work */}
+                  <div className="text-sm text-gray-600 mb-4">
+                    Can&apos;t see the article?{' '}
+                    <a
+                      href={match.articleUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:text-blue-600"
+                    >
+                      Click here to open it in a new tab
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-gray-500 italic">No article available yet.</p>
+                </div>
+              )}
+
+              {/* Show edit button for club owners */}
+              {isClub && match.clubId === user?.uid && (
                 <div className="mt-4 flex justify-end">
-                <button
+                  <button
                     onClick={() => setIsEditing(true)}
                     className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
+                  >
                     {match.articleUrl ? 'Update Article URL' : 'Add Article URL'}
-                </button>
+                  </button>
                 </div>
-            )}
+              )}
             </div>
-
-           
-            
           </div>
         </div>
 

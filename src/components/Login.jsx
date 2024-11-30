@@ -1,9 +1,10 @@
-import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { auth, db } from '../firebase';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import React from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+
 import { useAuth } from '../contexts/AuthContext';
+import { auth, db } from '../firebase';
 
 const Login = () => {
   const [email, setEmail] = React.useState('');
@@ -18,7 +19,7 @@ const Login = () => {
     }
   }, [user, navigate]);
 
-  const handleEmailLogin = async (e) => {
+  const handleEmailLogin = async e => {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -31,27 +32,27 @@ const Login = () => {
   const handleGoogleLogin = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      console.log("Starting Google login process");
+      console.log('Starting Google login process');
       const result = await signInWithPopup(auth, provider);
-      console.log("Google sign in successful", result.user.uid);
+      console.log('Google sign in successful', result.user.uid);
 
       // Create fan account if doesn't exist
       const fanRef = doc(db, 'fans', result.user.uid);
       const fanDoc = await getDoc(fanRef);
-      
+
       if (!fanDoc.exists()) {
-        console.log("Creating new fan account");
+        console.log('Creating new fan account');
         await setDoc(fanRef, {
           name: result.user.displayName || '',
           email: result.user.email,
           followedClubs: [],
-          createdAt: new Date()
+          createdAt: new Date(),
         });
       }
 
-      console.log("Login successful, navigation should happen through useEffect");
+      console.log('Login successful, navigation should happen through useEffect');
     } catch (error) {
-      console.error("Google login error:", error);
+      console.error('Google login error:', error);
       setError('Failed to login with Google.');
       if (auth.currentUser) {
         await auth.signOut();
@@ -88,7 +89,7 @@ const Login = () => {
                 type="email"
                 placeholder="Email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
               />
             </div>
@@ -97,7 +98,7 @@ const Login = () => {
                 type="password"
                 placeholder="Password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={e => setPassword(e.target.value)}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
               />
             </div>
@@ -110,10 +111,7 @@ const Login = () => {
             >
               Forgot password?
             </Link>
-            <Link
-              to="/register"
-              className="text-sm font-medium text-blue-600 hover:text-blue-500"
-            >
+            <Link to="/register" className="text-sm font-medium text-blue-600 hover:text-blue-500">
               Register new account
             </Link>
           </div>
@@ -125,7 +123,7 @@ const Login = () => {
             >
               Sign in
             </button>
-            
+
             <button
               type="button"
               onClick={handleGoogleLogin}

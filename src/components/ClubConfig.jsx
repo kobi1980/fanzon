@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { auth, db } from '../firebase';
 import { updatePassword, updateEmail } from 'firebase/auth';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import { useAuth } from '../contexts/AuthContext';
+import { auth, db } from '../firebase';
 
 const ClubConfig = () => {
   const { user } = useAuth();
@@ -51,7 +52,7 @@ const ClubConfig = () => {
     fetchClubData();
   }, [user, navigate]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -84,7 +85,7 @@ const ClubConfig = () => {
       setFormData(prev => ({
         ...prev,
         newPassword: '',
-        confirmPassword: ''
+        confirmPassword: '',
       }));
     } catch (error) {
       console.error('Error updating club settings:', error);
@@ -117,52 +118,44 @@ const ClubConfig = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Club Name
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Club Name</label>
             <input
               type="text"
               value={formData.clubName}
-              onChange={(e) => setFormData({ ...formData, clubName: e.target.value })}
+              onChange={e => setFormData({ ...formData, clubName: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Email</label>
             <input
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={e => setFormData({ ...formData, email: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Fan Shop URL
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Fan Shop URL</label>
             <input
               type="url"
               value={formData.fanShopUrl}
-              onChange={(e) => setFormData({ ...formData, fanShopUrl: e.target.value })}
+              onChange={e => setFormData({ ...formData, fanShopUrl: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               placeholder="https://..."
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Season Tickets URL
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Season Tickets URL</label>
             <input
               type="url"
               value={formData.seasonTicketsUrl}
-              onChange={(e) => setFormData({ ...formData, seasonTicketsUrl: e.target.value })}
+              onChange={e => setFormData({ ...formData, seasonTicketsUrl: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               placeholder="https://..."
             />
@@ -172,13 +165,11 @@ const ClubConfig = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-4">Change Password</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  New Password
-                </label>
+                <label className="block text-sm font-medium text-gray-700">New Password</label>
                 <input
                   type="password"
                   value={formData.newPassword}
-                  onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                  onChange={e => setFormData({ ...formData, newPassword: e.target.value })}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   placeholder="Leave blank to keep current password"
                   autoComplete="new-password"
@@ -192,7 +183,7 @@ const ClubConfig = () => {
                 <input
                   type="password"
                   value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   autoComplete="new-password"
                 />

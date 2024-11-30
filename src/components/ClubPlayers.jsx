@@ -1,7 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import { collection, query, where, getDocs, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
+} from 'firebase/firestore';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { db } from '../firebase';
 
 const ClubPlayers = () => {
   const { user } = useAuth();
@@ -14,48 +24,48 @@ const ClubPlayers = () => {
     name: '',
     position: '',
     shirtNumber: '',
-    dateOfBirth: ''
+    dateOfBirth: '',
   });
 
   // List of common football positions
-  const positions = [
-    'Goalkeeper',
-    'Defender',
-    'Midfielder',
-    'Forward'
-  ];
+  const positions = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'];
 
   useEffect(() => {
+    console.log('Current user:', user);
     fetchPlayers();
   }, [user]);
 
-  const fetchPlayers = async () => {
+  const fetchPlayers = useCallback(async () => {
+    if (!user?.uid) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      console.log('Fetching players for club:', user.uid);  // Debug log
-      const q = query(
-        collection(db, 'players'),
-        where('clubId', '==', user.uid)
-      );
+      const q = query(collection(db, 'players'), where('clubId', '==', user.uid));
       const snapshot = await getDocs(q);
       const playersData = snapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
-      console.log('Fetched players:', playersData);  // Debug log
       setPlayers(playersData);
     } catch (error) {
       console.error('Error fetching players:', error);
-      setError('Failed to load players: ' + error.message);
+      setError('Failed to fetch players');
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.uid]);
 
-  const handleSubmit = async (e) => {
+  useEffect(() => {
+    fetchPlayers();
+  }, [fetchPlayers]);
+
+  const handleSubmit = async e => {
     e.preventDefault();
-    setError('');  // Clear any previous errors
-    console.log('Starting player submission...', formData);  // Debug log
-  
+    setError(''); // Clear any previous errors
+    console.log('Starting player submission...', formData); // Debug log
+
     try {
       const playerData = {
         name: formData.name,
@@ -63,11 +73,11 @@ const ClubPlayers = () => {
         shirtNumber: parseInt(formData.shirtNumber) || 0,
         dateOfBirth: formData.dateOfBirth || null,
         clubId: user.uid,
-        createdAt: new Date()  // Add timestamp
+        createdAt: new Date(), // Add timestamp
       };
-  
-      console.log('Formatted player data:', playerData);  // Debug log
-  
+
+      console.log('Formatted player data:', playerData); // Debug log
+
       if (editPlayer) {
         console.log('Updating existing player:', editPlayer.id);
         await updateDoc(doc(db, 'players', editPlayer.id), playerData);
@@ -75,37 +85,37 @@ const ClubPlayers = () => {
         console.log('Adding new player');
         await addDoc(collection(db, 'players'), playerData);
       }
-  
+
       console.log('Player saved successfully');
-      
-      await fetchPlayers();  // Refresh the players list
+
+      await fetchPlayers(); // Refresh the players list
       setShowAddModal(false);
       setEditPlayer(null);
       setFormData({
         name: '',
         position: '',
         shirtNumber: '',
-        dateOfBirth: ''
+        dateOfBirth: '',
       });
     } catch (error) {
-      console.error('Error saving player:', error);  // Debug log
+      console.error('Error saving player:', error); // Debug log
       setError(`Failed to save player: ${error.message}`);
       // Keep the modal open when there's an error
     }
   };
 
-  const handleEdit = (player) => {
+  const handleEdit = player => {
     setEditPlayer(player);
     setFormData({
       name: player.name,
       position: player.position,
       shirtNumber: player.shirtNumber.toString(),
-      dateOfBirth: player.dateOfBirth || ''
+      dateOfBirth: player.dateOfBirth || '',
     });
     setShowAddModal(true);
   };
 
-  const handleDelete = async (playerId) => {
+  const handleDelete = async playerId => {
     if (window.confirm('Are you sure you want to delete this player?')) {
       try {
         await deleteDoc(doc(db, 'players', playerId));
@@ -130,7 +140,7 @@ const ClubPlayers = () => {
               name: '',
               position: '',
               shirtNumber: '',
-              dateOfBirth: ''
+              dateOfBirth: '',
             });
             setShowAddModal(true);
           }}
@@ -169,7 +179,7 @@ const ClubPlayers = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {players.map((player) => (
+            {players.map(player => (
               <tr key={player.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">{player.shirtNumber}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{player.name}</td>
@@ -206,43 +216,39 @@ const ClubPlayers = () => {
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Name
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Name</label>
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Position
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Position</label>
                 <select
                   value={formData.position}
-                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                  onChange={e => setFormData({ ...formData, position: e.target.value })}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   required
                 >
                   <option value="">Select Position</option>
                   {positions.map(pos => (
-                    <option key={pos} value={pos}>{pos}</option>
+                    <option key={pos} value={pos}>
+                      {pos}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Shirt Number
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Shirt Number</label>
                 <input
                   type="number"
                   value={formData.shirtNumber}
-                  onChange={(e) => setFormData({ ...formData, shirtNumber: e.target.value })}
+                  onChange={e => setFormData({ ...formData, shirtNumber: e.target.value })}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   required
                 />
@@ -255,7 +261,7 @@ const ClubPlayers = () => {
                 <input
                   type="date"
                   value={formData.dateOfBirth}
-                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                  onChange={e => setFormData({ ...formData, dateOfBirth: e.target.value })}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
