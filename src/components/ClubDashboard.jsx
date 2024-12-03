@@ -35,10 +35,11 @@ const ClubDashboard = () => {
     date: '',
     time: '',
     articleUrl: '',
-    startingPlayers: [],
+    startingLineup: [], // Make sure this is an empty array, not undefined
     benchPlayers: [],
     formation: '4-4-2'
   });
+  
 
   const fetchPlayers = useCallback(async () => {
     try {
@@ -74,7 +75,7 @@ const ClubDashboard = () => {
       console.error('Error fetching matches:', error);
     }
   }, [user?.uid]);
-
+ 
   useEffect(() => {
     if (user?.uid) {
       fetchMatches();
@@ -82,23 +83,32 @@ const ClubDashboard = () => {
     }
   }, [user?.uid, fetchMatches, fetchPlayers]);
 
-  const handlePlayerSelection = useCallback(({ startingPlayers, benchPlayers, formation }) => {
-    setFormData(prev => ({
-      ...prev,
-      startingPlayers,
-      benchPlayers,
-      formation,
-    }));
+  const handlePlayerSelection = useCallback(({ startingLineup, benchPlayers, formation }) => {
+    console.log('Received from FootballPlayerSelector:', { startingLineup, benchPlayers, formation });
+    setFormData(prev => {
+      const newState = {
+        ...prev,
+        startingLineup,
+        benchPlayers,
+        formation,
+      };
+      console.log('Updated form data:', newState);
+      return newState;
+    });
   }, []);
-
+  
   const handleSubmit = async e => {
     e.preventDefault();
+  
+    console.log('Form Data at submission:', formData); // Add this line
+    console.log('Starting lineup:', formData.startingLineup); // Add this line
 
-    if (formData.startingPlayers.length !== 11) {
+    // Add safety check
+    if (!formData.startingLineup || formData.startingLineup.length !== 11) {
       alert('You must select exactly 11 starting players');
       return;
     }
-
+  
     const matchData = {
       clubId: user.uid,
       clubName: user.clubData.clubName,
@@ -108,12 +118,11 @@ const ClubDashboard = () => {
       totalGrant: editMatch ? editMatch.totalGrant : 0,
       grants: editMatch ? editMatch.grants : {},
       articleUrl: formData.articleUrl || null,
-      benchPlayers: formData.benchPlayers,
-      startingPlayers: formData.startingPlayers.map(p => typeof p === 'string' ? p : p.playerId),
-      startingPositions: formData.startingPlayers.map(p => typeof p === 'string' ? null : p.positionId),
+      benchPlayers: formData.benchPlayers || [], // Add safety default
+      startingLineup: formData.startingLineup, 
       formation: formData.formation,
     };
-
+  
     try {
       if (editMatch) {
         await updateDoc(doc(db, 'matches', editMatch.id), matchData);
@@ -129,8 +138,9 @@ const ClubDashboard = () => {
         date: '',
         time: '',
         articleUrl: '',
-        startingPlayers: [],
+        startingLineup: [], // Make sure to reset with empty array
         benchPlayers: [],
+        formation: '4-4-2'
       });
     } catch (error) {
       console.error('Error saving match:', error);
@@ -151,22 +161,22 @@ const ClubDashboard = () => {
   const handleEdit = match => {
     const datetime = new Date(match.datetime.seconds * 1000);
     
-    // Reconstruct the player positions array
-    const startingPlayers = (match.startingPlayers || []).map((playerId, index) => ({
-      playerId,
-      positionId: match.startingPositions && match.startingPositions[index] 
-        ? match.startingPositions[index] 
-        // If no position stored, map to default formation positions
-        : FORMATIONS[match.formation || '4-4-2'].positions[index]?.id
-    }));
-  
+    // Use the stored startingLineup array directly if it exists
+    // Otherwise, construct it from the legacy format
+    const startingLineup = match.startingLineup || 
+      (match.startingPlayers || []).map((playerId, index) => ({
+        playerId,
+        positionId: match.startingPositions?.[index] || 
+          FORMATIONS[match.formation || '4-4-2'].positions[index]?.id
+      }));
+    
     setFormData({
       opponent: match.opponent,
       isHome: match.isHome.toString(),
       date: datetime.toISOString().split('T')[0],
       time: datetime.toTimeString().split(' ')[0].slice(0, 5),
       articleUrl: match.articleUrl || '',
-      startingPlayers: startingPlayers,
+      startingLineup,
       benchPlayers: match.benchPlayers || [],
       formation: match.formation || '4-4-2',
     });
@@ -183,8 +193,9 @@ const ClubDashboard = () => {
       date: '',
       time: '',
       articleUrl: '',
-      startingPlayers: [],
+      startingLineup: [],
       benchPlayers: [],
+      formation: '4-4-2' // Added default formation
     });
     setActiveTab('match-info');
   };
@@ -300,9 +311,9 @@ const ClubDashboard = () => {
 
               <TabsContent value="players">
                 <div className="space-y-6">
-                  <FootballPlayerSelector
+                <FootballPlayerSelector
                     allPlayers={players}
-                    initialStarting={formData.startingPlayers}
+                    initialStarting={formData.startingLineup}
                     initialBench={formData.benchPlayers}
                     initialFormation={formData.formation}
                     onSelectionChange={handlePlayerSelection}
@@ -407,7 +418,7 @@ const ClubDashboard = () => {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div>
                     <p className="text-sm font-medium">
-                      Starting XI: {match.startingPlayers?.length || 0}
+                      Starting XI: {match.startingLineup?.length || 0}
                     </p>
                     <p className="text-sm text-gray-500">
                       Bench: {match.benchPlayers?.length || 0}

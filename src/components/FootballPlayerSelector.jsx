@@ -120,20 +120,28 @@ const FootballPlayerSelector = ({
 
   // Notify parent of changes
   const notifyChanges = useCallback(() => {
-  if (!onSelectionChange) return;
-
-  const startingIds = Object.values(pitchPlayers).map(p => p.id);
-  const benchIds = benchPlayers.map(p => p.id);
-
-  const changes = {
-    startingPlayers: startingIds,
-    benchPlayers: benchIds,
-    formation: selectedFormation,
-  };
-
-  console.log('Notifying changes:', changes);
-  onSelectionChange(changes);
-}, [pitchPlayers, benchPlayers, selectedFormation, onSelectionChange]);
+    if (!onSelectionChange) return;
+  
+    // Create array of player-position pairs
+    const startingLineup = FORMATIONS[selectedFormation].positions.map(position => {
+      const player = pitchPlayers[position.id];
+      return player ? {
+        playerId: player.id,
+        positionId: position.id
+      } : null;
+    }).filter(Boolean); // Remove null entries
+  
+    const benchIds = benchPlayers.map(p => p.id);
+  
+    const changes = {
+      startingLineup,  // FIXED - now sending array of {playerId, positionId} objects
+      benchPlayers: benchIds,
+      formation: selectedFormation,
+    };
+  
+    console.log('Notifying changes:', changes);
+    onSelectionChange(changes);
+  }, [pitchPlayers, benchPlayers, selectedFormation, onSelectionChange]);
 
   useEffect(() => {
     notifyChanges();
